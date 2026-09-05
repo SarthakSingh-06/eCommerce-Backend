@@ -32,13 +32,6 @@ async function signup(req, res) {
         },
     });
 
-    const accessToken = newUser.getJWT_Token();
-
-    res.cookie("accessToken", accessToken, {
-        httpOnly: true,
-        secure: true,
-    });
-
     return API_Response.created(
         res,
         "User signed up successfully",
@@ -52,6 +45,34 @@ async function signup(req, res) {
     );
 };
 
+async function signin(req, res) {
+    const validationResult = await signinValidationSchema.safeParseAsync(req.body);
+    if (validationResult.error)
+        throw API_Error.badRequest(JSON.stringify(validationResult.error.issues));
+
+    const { email, password } = validationResult.data;
+
+    const existingUser = await User.findOne({ email }, { _id: 1, password: 1 });
+    if (!existingUser)
+        throw API_Error.notFound(`User with email ${email} does not exist`);
+
+    if (!existingUser.isPasswordCorrect(password))
+        throw API_Error.unauthorized("Incorrect email or password!");
+
+    const accessToken = existingUser.getJWT_Token();
+
+    res.cookie("accessToken", accessToken, {
+        httpOnly: true,
+        secure: true,
+    });
+
+    return API_Response.ok(
+        res,
+        "User signed in successfully",
+    );
+};
+
 export {
-    signup
+    signup,
+    signin
 };

@@ -56,7 +56,9 @@ async function signin(req, res) {
     if (!existingUser)
         throw API_Error.notFound(`User with email ${email} does not exist`);
 
-    if (!existingUser.isPasswordCorrect(password))
+    // checking password might take some time
+    const correctPassword = await existingUser.isPasswordCorrect(password);
+    if (!correctPassword)
         throw API_Error.unauthorized("Incorrect email or password!");
 
     const accessToken = existingUser.getJWT_Token();
@@ -72,7 +74,17 @@ async function signin(req, res) {
     );
 };
 
+async function logout(req, res) {
+    res.clearCookie("accessToken", {
+        httpOnly: true,
+        secure: true
+    });
+
+    return API_Response.ok(res, "User logged out successfully");
+};
+
 export {
     signup,
-    signin
+    signin,
+    logout
 };

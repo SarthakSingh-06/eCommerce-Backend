@@ -28,6 +28,10 @@ class API_Error extends Error {
     static notFound(message="Not found") {
         return new API_Error(404, message);
     };
+
+    static internalServerError(message="Internal Server Error") {
+        return new API_Error(500, message);
+    };
 };
 
 export { API_Error };

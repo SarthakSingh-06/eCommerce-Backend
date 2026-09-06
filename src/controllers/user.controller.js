@@ -3,8 +3,13 @@ import { API_Error } from "../utils/api-error.js";
 import { API_Response } from "../utils/api-response.js";
 import { uploadImageOnCloudinary } from "../utils/cloudinary.js";
 import {
+    sendEmail,
+    generateForgotPasswordMail
+} from "../utils/email.js";
+import {
     signupValidationSchema,
     signinValidationSchema,
+    forgotPasswordValidationSchema,
 } from "../validators/user.validator.js";
 
 async function signup(req, res) {
@@ -74,7 +79,7 @@ async function signin(req, res) {
     );
 };
 
-async function logout(req, res) {
+function logout(req, res) {
     res.clearCookie("accessToken", {
         httpOnly: true,
         secure: true
@@ -83,8 +88,54 @@ async function logout(req, res) {
     return API_Response.ok(res, "User logged out successfully");
 };
 
+/**
+ * @param {import("express").Request} req 
+ * @param {*} res 
+ */
+async function forgotPassword(req, res) {
+    const validationResult = await forgotPasswordValidationSchema.safeParseAsync(req.body);
+    if (validationResult.error)
+        throw new API_Error.badRequest(JSON.stringify(validationResult.error.issues));
+
+    const { email } = validationResult.data;
+
+    const existingUser = await User.findOne(
+        { email },
+        {
+            _id: 1,
+            name: 1
+        }
+    );
+    if (!existingUser)
+        throw API_Error.notFound(`User with email ${email} does not exist`);
+
+    const forgotPasswordToken = existingUser.getForgotPasswordToken();
+    await existingUser.save({ validateBeforeSave: false });
+
+    const redirectLink = `${req.protocol}://${ req.get('host')}/resetpassword/${forgotPasswordToken}`;
+    const { emailHTML, emailText } = generateForgotPasswordMail(existingUser.name, redirectLink);
+
+    try {
+        await sendEmail({
+            from: "ecommerce.backend@gmail.com",
+            to: email,
+            subject: "Forgot Password Request",
+            text: emailText,
+            html: emailHTML
+        });
+    } catch (error) {
+        existingUser.forgotPasswordToken = null;
+        existingUser.forgotPasswordExpiry = null;
+        await existingUser.save({ validateBeforeSave: false });
+        throw API_Error.internalServerError(error.message);
+    }
+
+    return API_Response.ok(res, "Forgot password mail sent successfully");
+};
+
 export {
     signup,
     signin,
-    logout
+    logout,
+    forgotPassword,
 };

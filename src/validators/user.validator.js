@@ -11,7 +11,12 @@ const signinValidationSchema = z.object({
     password: z.string().min(8, "Password must be atleast 8 characters long"),
 });
 
+const forgotPasswordValidationSchema = z.object({
+    email: z.email().max(322),
+});
+
 export {
     signupValidationSchema,
-    signinValidationSchema
+    signinValidationSchema,
+    forgotPasswordValidationSchema
 };

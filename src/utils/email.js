@@ -22,12 +22,10 @@ const mailGenerator = new Mailgen({
 
 const sendEmail = async ({ from, to, subject, text, html=undefined }) => {
     try {
-        const response = await transport.sendMail({
+        await transport.sendMail({
             from, to, subject, text,
             html: html ? html : `<div>${text}</div>`
         });
-
-        return response;
     } catch (error) {
         throw API_Error.internalServerError(`Failed to send the email:\n${error}`);
     }

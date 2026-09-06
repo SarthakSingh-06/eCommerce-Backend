@@ -74,7 +74,7 @@ userSchema.methods.getJWT_Token = function() {
 // generate forgot password token
 userSchema.methods.getForgotPasswordToken = function() {
     const token = randomBytes(32).toString("hex");
-    const hashedToken = createHmac("sha256", randomHexStr).digest("hex");
+    const hashedToken = createHmac("sha256", token).digest("hex");
     this.forgotPasswordToken = hashedToken;
 
     // token will be valid for 20 mins

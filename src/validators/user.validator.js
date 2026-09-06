@@ -15,8 +15,14 @@ const forgotPasswordValidationSchema = z.object({
     email: z.email().max(322),
 });
 
+const newPasswordValidationSchema = z.object({
+    newPassword: z.string().min(8),
+    confirmPassword: z.string().min(8),
+});
+
 export {
     signupValidationSchema,
     signinValidationSchema,
-    forgotPasswordValidationSchema
+    forgotPasswordValidationSchema,
+    newPasswordValidationSchema
 };

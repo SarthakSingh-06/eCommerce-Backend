@@ -5,6 +5,7 @@ import {
     signin,
     logout,
     forgotPassword,
+    resetPassword
 } from "../controllers/user.controller.js";
 
 const router = Router();
@@ -16,6 +17,7 @@ router.post(
 );
 router.post("/signin", signin);
 router.get("/logout", logout);
-router.post("/forgotPassword", forgotPassword);
+router.post("/forgotpassword", forgotPassword);
+router.post("/resetpassword/:token", resetPassword);
 
 export default router;

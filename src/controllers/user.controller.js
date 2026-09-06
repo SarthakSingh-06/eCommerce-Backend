@@ -2,6 +2,7 @@ import { User } from "../models/user.model.js";
 import { API_Error } from "../utils/api-error.js";
 import { API_Response } from "../utils/api-response.js";
 import { uploadImageOnCloudinary } from "../utils/cloudinary.js";
+import { createHmac } from "node:crypto";
 import {
     sendEmail,
     generateForgotPasswordMail
@@ -10,6 +11,7 @@ import {
     signupValidationSchema,
     signinValidationSchema,
     forgotPasswordValidationSchema,
+    newPasswordValidationSchema
 } from "../validators/user.validator.js";
 
 async function signup(req, res) {
@@ -133,9 +135,38 @@ async function forgotPassword(req, res) {
     return API_Response.ok(res, "Forgot password mail sent successfully");
 };
 
+async function resetPassword(req, res) {
+    const token = req.params.token;
+    const hashedToken = createHmac("sha256", token).digest("hex");
+
+    const existingUser = await User.findOne({
+        forgotPasswordToken: hashedToken,
+        forgotPasswordExpiry: { $gt: Date.now() }
+    }, {
+        _id: 1
+    });
+
+    if (!existingUser)
+        throw API_Error.badRequest("Invalid or expired token provided");
+
+    const validationResult = await newPasswordValidationSchema.safeParseAsync(req.body);
+    if (validationResult.error)
+        throw API_Error.badRequest(validationResult.error);
+
+    const { newPassword, confirmPassword } = validationResult.data;
+    if (newPassword !== confirmPassword)
+        throw API_Error.badRequest("New password and confirm password should be the same!");
+
+    existingUser.password = newPassword;
+    await existingUser.save({ validateBeforeSave: false });
+
+    return API_Response.ok(res, "Password updated successfully");
+};
+
 export {
     signup,
     signin,
     logout,
     forgotPassword,
+    resetPassword,
 };

@@ -3,9 +3,6 @@ import { User } from "../models/user.model.js";
 import { API_Error } from "../utils/api-error.js";
 import jwt from "jsonwebtoken";
 
-/**
- * @param {import("express").Request} req
- */
 export const isLoggedIn = async (req, res, next) => {
     const accessToken = req.cookies["accessToken"] || req.headers["authorization"]?.replace("Bearer", "");
     if (!accessToken)

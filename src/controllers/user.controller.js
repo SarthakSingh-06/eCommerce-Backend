@@ -11,7 +11,8 @@ import {
     signupValidationSchema,
     signinValidationSchema,
     forgotPasswordValidationSchema,
-    newPasswordValidationSchema
+    newPasswordValidationSchema,
+    updatePasswordValidationSchema,
 } from "../validators/user.validator.js";
 
 async function signup(req, res) {
@@ -163,10 +164,35 @@ async function resetPassword(req, res) {
     return API_Response.ok(res, "Password updated successfully");
 };
 
+async function updatePassword(req, res) {
+    const validationResult = await updatePasswordValidationSchema.safeParseAsync(req.body);
+    if (validationResult.error)
+        throw API_Error.badRequest(JSON.stringify(validationResult.error.issues));
+
+    const { oldPassword, newPassword } = validationResult.data;
+
+    const existingUser = await User.findById(
+        req.user.id,
+        {
+            password: 1
+        }
+    );
+    
+    const correctPassword = existingUser.isPasswordCorrect(oldPassword);
+    if (!correctPassword)
+        throw API_Error.unauthorized("Incorrect password or expired user token");
+
+    existingUser.password = newPassword;
+    await existingUser.save({ validateBeforeSave: false });
+
+    return API_Response.ok(res, "Password changes successfully");
+};
+
 export {
     signup,
     signin,
     logout,
     forgotPassword,
     resetPassword,
+    updatePassword,
 };

@@ -20,9 +20,15 @@ const newPasswordValidationSchema = z.object({
     confirmPassword: z.string().min(8),
 });
 
+const updatePasswordValidationSchema = z.object({
+    oldPassword: z.string().min(8),
+    newPassword: z.string().min(8),
+});
+
 export {
     signupValidationSchema,
     signinValidationSchema,
     forgotPasswordValidationSchema,
-    newPasswordValidationSchema
+    newPasswordValidationSchema,
+    updatePasswordValidationSchema
 };

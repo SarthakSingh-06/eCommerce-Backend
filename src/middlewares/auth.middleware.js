@@ -12,6 +12,6 @@ export const isLoggedIn = async (req, res, next) => {
     if (!decodedToken)
         throw API_Error.badRequest("Invalid or expired token provided")
 
-    req.user = await User.findById(decodedToken.id);
+    req.user = await User.findById(decodedToken.id, { _id: 1 });
     next();
 };

@@ -170,9 +170,8 @@ async function updatePassword(req, res) {
         throw API_Error.badRequest(JSON.stringify(validationResult.error.issues));
 
     const { oldPassword, newPassword } = validationResult.data;
-
     const existingUser = await User.findById(
-        req.user.id,
+        req.user._id,
         {
             password: 1
         }
@@ -188,6 +187,14 @@ async function updatePassword(req, res) {
     return API_Response.ok(res, "Password changes successfully");
 };
 
+async function getUserDashboard(req, res) {
+    const user = await User.findById(req.user._id).select(
+        "-__v -createdAt -updatedAt"
+    );
+
+    return API_Response.ok(res, "user dashboard fetched successfully", user);
+};
+
 export {
     signup,
     signin,
@@ -195,4 +202,5 @@ export {
     forgotPassword,
     resetPassword,
     updatePassword,
+    getUserDashboard,
 };

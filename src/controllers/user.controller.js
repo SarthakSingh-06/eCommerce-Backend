@@ -1,7 +1,7 @@
 import { User } from "../models/user.model.js";
 import { API_Error } from "../utils/api-error.js";
 import { API_Response } from "../utils/api-response.js";
-import { uploadImageOnCloudinary } from "../utils/cloudinary.js";
+import { uploadImageOnCloudinary, deleteFileOnCloudinary } from "../utils/cloudinary.js";
 import { createHmac } from "node:crypto";
 import {
     sendEmail,
@@ -13,6 +13,7 @@ import {
     forgotPasswordValidationSchema,
     newPasswordValidationSchema,
     updatePasswordValidationSchema,
+    updateUserDetailsValidationSchema,
 } from "../validators/user.validator.js";
 
 async function signup(req, res) {
@@ -195,6 +196,68 @@ async function getUserDashboard(req, res) {
     return API_Response.ok(res, "user dashboard fetched successfully", user);
 };
 
+async function updateUserDetails(req, res) {
+    const validationResult = await updateUserDetailsValidationSchema.safeParseAsync(req.body);
+    if (validationResult.error)
+        throw API_Error.badRequest(JSON.stringify(validationResult.error.issues));
+
+    const { name, email } = validationResult.data;
+    const newProfilePhoto = req?.file;
+
+    if (name === undefined && email === undefined && !newProfilePhoto)
+        throw API_Error.badRequest("Provide at least one detail to update");
+
+    const newData = {};
+    if (name !== undefined) newData.name = name;
+    if (email !== undefined) newData.email = email;
+
+    const existingUser = await User.findById(req.user._id, {
+        name: 1,
+        email: 1,
+        role: 1,
+        profileImage: 1
+    });
+
+    if (!existingUser)
+        throw API_Error.notFound("User does not exist");
+
+    if (newProfilePhoto?.path) {
+        // upload new profile image
+        const profileImageOnCloudinary = await uploadImageOnCloudinary(newProfilePhoto.path);
+
+        if (!profileImageOnCloudinary)
+            throw API_Error.badRequest("Unable to upload profile photo on cloudinary");
+
+        // delete old profile image
+        if (existingUser.profileImage?.id)
+            await deleteFileOnCloudinary(existingUser.profileImage.id);
+
+        // save new profile image in database
+        newData.profileImage = {
+            id: profileImageOnCloudinary.public_id,
+            secure_url: profileImageOnCloudinary.secure_url
+        };
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set: newData
+        },
+        {
+            returnDocument: "after",
+        }
+    );
+
+    return API_Response.ok(res, "User details updated", {
+        id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        profileImageURL: updatedUser.profileImage?.secure_url
+    });
+};
+
 export {
     signup,
     signin,
@@ -203,4 +266,5 @@ export {
     resetPassword,
     updatePassword,
     getUserDashboard,
+    updateUserDetails,
 };

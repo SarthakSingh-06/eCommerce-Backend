@@ -9,6 +9,7 @@ import {
     resetPassword,
     updatePassword,
     getUserDashboard,
+    updateUserDetails
 } from "../controllers/user.controller.js";
 
 const router = Router();
@@ -27,5 +28,11 @@ router.post("/resetpassword/:token", resetPassword);
 // secure routes
 router.post("/updatepassword", isLoggedIn, updatePassword);
 router.get("/userdashboard", isLoggedIn, getUserDashboard);
+router.post(
+    "/userdashboard/update",
+    upload.single("newProfileImage"),
+    isLoggedIn,
+    updateUserDetails
+);
 
 export default router;

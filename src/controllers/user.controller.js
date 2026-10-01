@@ -116,7 +116,7 @@ async function forgotPassword(req, res) {
     const forgotPasswordToken = existingUser.getForgotPasswordToken();
     await existingUser.save({ validateBeforeSave: false });
 
-    const redirectLink = `${req.protocol}://${ req.get('host')}/resetpassword/${forgotPasswordToken}`;
+    const redirectLink = `${req.protocol}://${req.get('host')}/resetpassword/${forgotPasswordToken}`;
     const { emailHTML, emailText } = generateForgotPasswordMail(existingUser.name, redirectLink);
 
     try {
@@ -177,7 +177,7 @@ async function updatePassword(req, res) {
             password: 1
         }
     );
-    
+
     const correctPassword = existingUser.isPasswordCorrect(oldPassword);
     if (!correctPassword)
         throw API_Error.unauthorized("Incorrect password or expired user token");
@@ -258,13 +258,79 @@ async function updateUserDetails(req, res) {
     });
 };
 
+async function adminGetAllUsers(req, res) {
+    const users = await User.find().select("-updatedAt -__v -profileImage.id");
+
+    return API_Response.ok(res, "Fetch all users", users);
+};
+
+async function managerGetAllUsers(req, res) {
+    const users = await User.find({ role: "user" }).select("-updatedAt -__v -profileImage.id");
+
+    return API_Response.ok(res, "Fetch all users", users);
+}
+
+async function adminGetUserById(req, res) {
+    const userId = req.params.userId;
+    const user = await User.findById(userId).select(
+        "-updatedAt -__v -profileImage.id"
+    );
+
+    if (!user)
+        throw API_Error.notFound("User does not exist");
+
+    return API_Response.ok(res, "Fetch user", user);
+};
+
+async function adminUpdateUserById(req, res) {
+    const { name, email, role } = req.body;
+
+    if (name === undefined && email === undefined && role === undefined)
+        throw API_Error.badRequest("Provide at least one detail to update");
+
+    const newData = {};
+    if (name !== undefined) newData.name = name;
+    if (email !== undefined) newData.email = email;
+    if (role !== undefined) newData.role = role;
+
+    const updatedUser = await User.findByIdAndUpdate(
+        req.params.id,
+        {
+            $set: newData
+        },
+        {
+            returnDocument: "after",
+            runValidators: true
+        }
+    );
+
+    if (!updatedUser)
+        throw API_Error.notFound("User does not exist");
+
+    return API_Response.ok(res, "User details updated", {
+        id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        profileImageURL: updatedUser.profileImage?.secure_url,
+    });
+};
+
+async function adminDeleteUserById(req, res) {
+    const deletedUser = await User.findByIdAndDelete(req.params.id);
+
+    if (!deletedUser)
+        throw API_Error.notFound("User does not exist");
+
+    if (deletedUser.profileImage?.id)
+        await deleteFileOnCloudinary(deletedUser.profileImage.id);
+
+    return API_Response.ok(res, "User deleted successfully");
+};
+
 export {
-    signup,
-    signin,
-    logout,
-    forgotPassword,
-    resetPassword,
-    updatePassword,
-    getUserDashboard,
-    updateUserDetails,
+    signup, signin, logout,
+    forgotPassword, resetPassword, updatePassword,
+    getUserDashboard, updateUserDetails, adminGetAllUsers, managerGetAllUsers,
+    adminGetUserById, adminUpdateUserById, adminDeleteUserById,
 };

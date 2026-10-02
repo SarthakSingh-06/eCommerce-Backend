@@ -10,8 +10,10 @@ app.use(express.urlencoded({ limit: "16kb", extended: true }));
 // imoprt the routes
 import healthRouter from "./routes/health.route.js";
 import userRouter from "./routes/user.routes.js";
+import productRouter from "./routes/product.route.js";
 
 app.use("/api/v1/health", healthRouter);
 app.use("/api/v1/user", userRouter);
+app.use("/api/v1/product", productRouter);
 
 export { app };

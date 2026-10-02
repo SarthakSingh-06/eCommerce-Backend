@@ -6,7 +6,7 @@ const addProductValidationSchema = z.object({
         .min(1, "Product name is required")
         .max(120, "Product name cannot be more than 120 characters"),
 
-    price: z.number("Please provide product price")
+    price: z.coerce.number("Please provide product price")
         .min(0, "Price cannot be negative")
         .max(999999, "Price cannot be more than 9,99,999"),
 
@@ -14,8 +14,7 @@ const addProductValidationSchema = z.object({
         .trim()
         .min(1, "Product description is required"),
 
-    brand: z
-        .string("Please enter product brand")
+    brand: z.string("Please enter product brand")
         .trim()
         .min(1, "Product brand is required"),
 
@@ -30,7 +29,7 @@ const addProductValidationSchema = z.object({
     ),
 
 
-    stock: z.number("Please enter product stock")
+    stock: z.coerce.number("Please enter product stock")
         .min(0, "Stock cannot be negative")
         .default(0),
 });

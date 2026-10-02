@@ -44,7 +44,7 @@ async function addProduct(req, res) {
             name, price, description,
             photos: uploadedPhotos,
             brand, category, stock,
-            user: new mongooseTypes.ObjectId(req.user.id),
+            user: new mongooseTypes.ObjectId(req.user._id),
         });
 
         return API_Response.created(res,"Product created successfully",product);

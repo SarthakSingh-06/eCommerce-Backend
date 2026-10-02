@@ -13,15 +13,15 @@ class WhereClause {
         } : {};
 
         this.baseModel = this.baseModel.find({ ...searchWord })
-        return this.baseModel;
+        return this;
     };
 
     pager(resultsPerPage) {
-        const page = Number(this.searchQuery.page) || 1;
+        const page = Number(this.query.page) || 1;
         const skipValue = (page - 1) * resultsPerPage;
 
         this.baseModel = this.baseModel.skip(skipValue).limit(resultsPerPage);
-        return this.baseModel;
+        return this;
     };
 
     filter() {
@@ -35,9 +35,10 @@ class WhereClause {
         const queryStr = JSON.stringify(queryCopy).replace(/\b(gte|lte)\b/g, (match) => `$${match}`);
 
         const filterQuery = JSON.parse(queryStr);
+        console.log(filterQuery)
 
         this.baseModel = this.baseModel.find(filterQuery);
-        return this.baseModel;
+        return this;
     };
 };
 

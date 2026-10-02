@@ -2,6 +2,7 @@ import { Product } from "../models/product.model.js";
 import { User } from "../models/user.model.js";
 import { API_Error } from "../utils/api-error.js";
 import { API_Response } from "../utils/api-response.js";
+import { WhereClause } from "../utils/where-clause.js";
 import { uploadImageOnCloudinary, deleteFileOnCloudinary } from "../utils/cloudinary.js";
 import { Types as mongooseTypes } from "mongoose";
 import {
@@ -60,6 +61,29 @@ async function addProduct(req, res) {
     }
 };
 
+async function getAllProducts(req, res) {
+    const totalProducts = await Product.countDocuments();
+    
+    const whereClause = new WhereClause(Product, req.query).search().filter();
+    
+    const filteredProducts = (await whereClause.baseModel.clone()).length;
+
+    whereClause.pager(10);
+    
+    const pagerResult = await whereClause.baseModel;
+
+    return API_Response.ok(
+        res,
+        "Products fetched successfully",
+        {
+            pagerResult,
+            totalProducts,
+            filteredProducts,
+        }
+    );
+};
+
 export {
     addProduct,
+    getAllProducts,
 }

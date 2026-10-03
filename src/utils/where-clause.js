@@ -35,7 +35,6 @@ class WhereClause {
         const queryStr = JSON.stringify(queryCopy).replace(/\b(gte|lte)\b/g, (match) => `$${match}`);
 
         const filterQuery = JSON.parse(queryStr);
-        console.log(filterQuery)
 
         this.baseModel = this.baseModel.find(filterQuery);
         return this;
